@@ -1,5 +1,7 @@
 # Base De Datos Jardineria
 
+# Consultas Multitabla (Composicion Interna)
+
 1. Obtén un listado con el nombre de cada cliente y el nombre y apellido de su representante de ventas.
 
 ```sql
@@ -96,4 +98,113 @@ JOIN pedido ped ON dp.codigo_pedido = ped.codigo_pedido
 JOIN pago pg ON pg.codigo_cliente = ped.codigo_cliente
 GROUP BY ped.codigo_cliente
 ORDER BY ped.codigo_cliente;
+```
+
+# Consultas Multitabla (Composicion Externa)
+
+1. Devuelve un listado que muestre solamente los clientes que no han pagado.
+
+```sql
+SELECT c.nombre_cliente, c.telefono, c.ciudad FROM cliente c
+LEFT JOIN pago p ON c.codigo_cliente = p.codigo_cliente
+WHERE p.codigo_cliente IS NUll;
+```
+
+2. Devuelve un listado que muestre solamente los clientes que no han realizado ningun pedido.
+
+```sql
+SELECT c.nombre_cliente FROM cliente c
+LEFT JOIN pedido p ON c.codigo_cliente = p.codigo_cliente
+WHERE p.codigo_cliente IS NUll;
+```
+
+3. Devuelve un listado que muestre solamente los clientes que no han realizado ningun pago y los que no han realizado ningun pedido.
+
+```sql
+SELECT DISTINCT c.nombre_cliente FROM cliente c
+LEFT JOIN pago pg ON c.codigo_cliente = pg.codigo_cliente
+LEFT JOIN pedido pd ON c.codigo_cliente = pd.codigo_cliente
+WHERE pg.codigo_cliente IS NULL 
+OR pd.codigo_cliente IS NULL; 
+```
+
+4. Devuelve un listado que muestre solamente los empleados que no tienen oficina asociada.
+
+```sql
+SELECT e.codigo_oficina, e.nombre FROM empleado e
+LEFT JOIN oficina ofi ON e.codigo_oficina = ofi.codigo_oficina
+WHERE e.codigo_oficina IS NULL;
+```
+
+5. Devuelve un listado que muestre solamente los empleados que no tienen cliente asociado.
+
+```sql
+SELECT e.nombre, c.nombre_cliente FROM empleado e
+LEFT JOIN cliente c ON e.codigo_empleado = c.codigo_empleado_rep_ventas
+WHERE c.codigo_empleado_rep_ventas IS NULL;
+```
+
+6. Devuelve un listado que muestre solamente los empleados que no tienen cliente asociado, junto con los datos de la oficina en la que trabaja.
+
+```sql
+SELECT e.nombre as Nombre_Empleado, CONCAT(ofi.ciudad, '/', ofi.pais, '/', ofi.codigo_postal, '/', ofi.telefono) as Datos_Oficina FROM empleado e
+JOIN oficina ofi ON e.codigo_oficina = ofi.codigo_oficina
+LEFT JOIN cliente c ON e.codigo_empleado = c.codigo_empleado_rep_ventas
+WHERE c.codigo_empleado_rep_ventas IS NULL;
+```
+
+7. Devuelve un listado que muestre los empleados que no tienen oficina asociada y los que no tienen un cliente asociado.
+
+```sql
+SELECT e.codigo_empleado, e.nombre, e.codigo_oficina, c.codigo_empleado_rep_ventas FROM empleado e
+LEFT JOIN oficina ofi ON e.codigo_oficina = ofi.codigo_oficina
+LEFT JOIN cliente c ON e.codigo_empleado = c.codigo_empleado_rep_ventas
+WHERE e.codigo_oficina IS NULL OR c.codigo_empleado_rep_ventas IS NULL;
+```
+
+8. Devuelve un listado de los productos que nunca han aparecido en un pedido.
+
+```sql
+SELECT DISTINCT pd.codigo_producto, pd.nombre FROM producto pd
+LEFT JOIN detalle_pedido dp ON pd.codigo_producto = dp.codigo_producto
+WHERE dp.codigo_producto IS NULL;
+```
+
+9. Devuelve un listado de los productos que nunca han aparecido en un pedido. El resultado debe mostrar, nombre, descripcion y la imagen del producto.
+
+```sql
+SELECT DISTINCT pd.codigo_producto, pd.nombre, g.descripcion_texto, g.imagen FROM producto pd
+JOIN gama_producto g ON g.gama = pd.gama
+LEFT JOIN detalle_pedido dp ON pd.codigo_producto = dp.codigo_producto
+WHERE dp.codigo_producto IS NULL;
+```
+
+10. Devuelve las oficinas donde no trabajan ninguno de los empleados que hayan sido los representantes de ventas de algún cliente que haya realizado la compra de algún producto de la gama Frutales.
+
+```sql
+SELECT DISTINCT em.* FROM oficina ofi
+LEFT JOIN empleado em ON em.codigo_oficina = ofi.codigo_oficina
+JOIN cliente c ON c.codigo_empleado_rep_ventas = em.codigo_empleado
+JOIN pedido ped ON ped.codigo_cliente = c.codigo_cliente
+JOIN detalle_pedido dep ON dep.codigo_pedido = ped.codigo_pedido
+JOIN producto prod ON dep.codigo_producto = prod.codigo_producto
+WHERE LOWER(prod.gama) != 'frutales';
+```
+
+11. Devuelve un listado con los clientes que han realizado algún pedido pero no han realizado ningún pago.
+
+```sql
+SELECT DISTINCT c.nombre_cliente, pg.codigo_cliente, pd.codigo_cliente FROM cliente c
+LEFT JOIN pago pg ON c.codigo_cliente = pg.codigo_cliente
+LEFT JOIN pedido pd ON c.codigo_cliente = pd.codigo_cliente
+WHERE pg.codigo_cliente IS NULL AND pd.codigo_cliente IS NOT NULL;
+```
+
+12. Devuelve un listado con los datos de los empleados que no tienen clientes asociados y el nombre de su jefe asociado.
+
+```sql
+SELECT e.nombre as EMPLEADO, jefe.nombre as JEFE, c.nombre_cliente FROM empleado e
+LEFT JOIN empleado jefe ON e.codigo_jefe = jefe.codigo_empleado
+LEFT JOIN cliente c ON e.codigo_empleado = c.codigo_empleado_rep_ventas
+WHERE c.codigo_empleado_rep_ventas IS NULL;
 ```
