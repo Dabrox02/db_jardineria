@@ -488,3 +488,59 @@ SELECT * FROM producto pd WHERE NOT EXISTS (SELECT * FROM detalle_pedido dp WHER
 ```sql
 SELECT * FROM producto pd WHERE NOT EXISTS (SELECT * FROM detalle_pedido dp WHERE dp.codigo_producto = pd.codigo_producto);
 ```
+
+## TIPS CON GROUP BY
+
+### Multiple Agrupamiento
+
+```sql
+SELECT pd.gama as GamaProducto, pd.nombre as NombreProducto
+FROM detalle_pedido dp 
+JOIN producto pd ON dp.codigo_producto = pd.codigo_producto
+GROUP BY pd.gama, pd.nombre;
+```
+
+### Filtrar por agreggate functions
+
+```sql
+SELECT pd.nombre as NombreProducto, SUM(dp.cantidad) as SumaCantidadProductosPedidos
+FROM detalle_pedido dp 
+JOIN producto pd ON dp.codigo_producto = pd.codigo_producto
+GROUP BY pd.nombre 
+ORDER BY SUM(dp.cantidad) DESC;
+```
+
+### Agrupado por funciones escalares
+
+```sql
+SELECT LEFT(pd.nombre, 1), SUM(dp.cantidad) as SumaCantidadProductosPedidos
+FROM detalle_pedido dp 
+JOIN producto pd ON dp.codigo_producto = pd.codigo_producto
+GROUP BY LEFT(pd.nombre, 1) 
+ORDER BY SUM(dp.cantidad) DESC;
+```
+
+### Agrupado con UNION ALL
+```sql
+(SELECT LEFT(pd.nombre, 1), SUM(dp.cantidad) as SumaCantidadProductosPedidos
+FROM detalle_pedido dp 
+JOIN producto pd ON dp.codigo_producto = pd.codigo_producto
+WHERE LEFT(pd.nombre, 1) = 'T'
+GROUP BY LEFT(pd.nombre, 1))
+UNION
+(SELECT LEFT(pd.nombre, 1), SUM(dp.cantidad) as SumaCantidadProductosPedidos
+FROM detalle_pedido dp 
+JOIN producto pd ON dp.codigo_producto = pd.codigo_producto
+WHERE LEFT(pd.nombre, 1) = 'A'
+GROUP BY LEFT(pd.nombre, 1));
+```
+
+### Concatenar resultados de agrupamiento
+
+```sql
+SELECT pd.gama as GamaProducto, GROUP_CONCAT(DISTINCT pd.nombre SEPARATOR ' | ') as NombreProducto
+FROM detalle_pedido dp 
+JOIN producto pd ON dp.codigo_producto = pd.codigo_producto
+GROUP BY pd.gama;
+```
+
