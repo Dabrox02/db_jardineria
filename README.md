@@ -544,3 +544,52 @@ JOIN producto pd ON dp.codigo_producto = pd.codigo_producto
 GROUP BY pd.gama;
 ```
 
+### Totales por agrupamiento
+
+```sql
+SELECT IF(ISNULL(nombre), 'TOTAL', nombre) as NombreProducto, SUM(dp.cantidad) as SumaCantidadProductosPedidos
+FROM detalle_pedido dp 
+JOIN producto pd ON dp.codigo_producto = pd.codigo_producto
+GROUP BY pd.nombre WITH ROLLUP
+ORDER BY SUM(dp.cantidad) DESC;
+```
+
+## TIPS CON WHERE
+
+### NOT IN
+
+```sql
+SELECT * FROM producto WHERE gama NOT IN ("herramientas", "aromaticas");
+```
+
+### Subconsulta
+
+```sql
+SELECT DISTINCT dp1.codigo_pedido 
+FROM detalle_pedido dp1 
+WHERE (
+    SELECT COUNT(*) 
+    FROM detalle_pedido dp2 
+    WHERE dp1.codigo_pedido = dp2.codigo_pedido 
+    GROUP BY codigo_pedido) > 5 
+ORDER BY codigo_pedido;
+```
+
+### REGEX
+
+```sql
+SELECT codigo_producto FROM producto WHERE codigo_producto REGEXP '^[0-9]+$';
+```
+
+### IN y Subconsulta
+
+```sql
+SELECT * FROM producto WHERE codigo_producto IN (SELECT codigo_producto FROM producto WHERE codigo_producto REGEXP '^[0-9]+$'
+);
+```
+
+### Funciones
+
+```sql
+SELECT REVERSE(nombre), ROUND(RAND() * 10) FROM producto;
+```
