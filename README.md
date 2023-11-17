@@ -593,3 +593,119 @@ SELECT * FROM producto WHERE codigo_producto IN (SELECT codigo_producto FROM pro
 ```sql
 SELECT REVERSE(nombre), ROUND(RAND() * 10) FROM producto;
 ```
+
+## TIPS CON UPDATE
+
+### Editar un valor ya guardado
+
+```sql
+UPDATE producto SET precio_venta = precio_venta + 10 
+WHERE precio_venta < 10
+AND codigo_producto = "AR-001";
+```
+
+### Multiple agrupamiento
+
+```sql
+UPDATE cliente SET linea_direccion2 = DEFAULT WHERE linea_direccion2 IS NULL AND codigo_cliente = 1;
+```
+
+### Editar obteniendo el valor por subconsulta
+
+```sql
+UPDATE cliente SET nombre_contacto = CONCAT(
+nombre_contacto, "Prov : ", (
+	SELECT nombre FROM empleado WHERE cliente.codigo_empleado_rep_ventas = empleado.codigo_empleado
+    )
+) WHERE codigo_cliente = 1;
+```
+
+### Subconsultas en WHERE
+
+```sql
+UPDATE cliente SET limite_credito = limite_credito + 1000
+WHERE codigo_cliente IN (
+	SELECT codigo_cliente FROM cliente WHERE limite_credito < 10000
+);
+```
+
+### UPDATE con JOIN
+
+```sql
+UPDATE empleado em
+JOIN oficina ofi ON em.codigo_oficina = ofi.codigo_oficina
+SET em.extension = ofi.pais;
+```
+
+### Utilizar JSON
+
+**NOTA:** Esto funcionaria **_SOLO_** si el campo email es de tipo **JSON**. La base de datos no provee ningun campo de tipo JSON. 
+
+```sql
+UPDATE empleado
+SET email = JSON_SET(email, '$', JSON_OBJECT('campo_anterior', email));
+```
+
+## TIPS CON SELECT
+
+### Valores Fijos
+
+```sql
+DROP TABLE IF EXISTS tmp_table_empleado_cliente;
+
+CREATE TABLE IF NOT EXISTS tmp_table_empleado_cliente(
+	nombreEmpleado varchar(100),
+    nombreCliente varchar(100)
+);
+
+INSERT INTO tmp_table_empleado_cliente
+SELECT CONCAT(nombre, " ", apellido1), nombre_cliente FROM empleado em, cliente cl
+WHERE cl.codigo_empleado_rep_ventas = em.codigo_empleado
+AND codigo_cliente < 10;
+
+SELECT * FROM tmp_table_empleado_cliente;
+```
+
+### Operaciones con columnas
+
+```sql
+select codigo_oficina, CONCAT(ciudad, ' - ', region) as Ubicacion from oficina;
+```
+
+### Condiciones
+
+```sql
+select nombre_cliente, limite_credito, 
+CASE WHEN limite_credito > 20000 THEN "Credito Alto" ELSE "Credito Bajo" END as NivelCredito
+FROM cliente;
+```
+
+### Subconsultas
+
+```sql
+SELECT gama, (SELECT count(*) FROM producto WHERE gama_producto.gama = producto.gama) as CantidadProductos FROM gama_producto;
+```
+
+### Consulta sobre Subconsulta
+
+```sql
+SELECT codigo_producto, proveedor, cantidad
+FROM (
+    SELECT codigo_producto, proveedor, cantidad_en_stock as cantidad
+    FROM producto
+    WHERE cantidad_en_stock < 100
+) AS subconsulta
+WHERE cantidad > 5 AND cantidad < 50;
+```
+
+### Columna autoincremental virtual
+
+```sql
+SELECT ROW_NUMBER() OVER (ORDER BY codigo_producto) as Nro, codigo_producto, proveedor, cantidad
+FROM (
+    SELECT codigo_producto, proveedor, cantidad_en_stock as cantidad
+    FROM producto
+    WHERE cantidad_en_stock < 100
+) AS subconsulta
+WHERE cantidad > 5 AND cantidad < 50;
+```
